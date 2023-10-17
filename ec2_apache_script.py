@@ -33,22 +33,31 @@ ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 ssh.connect(public_ip, username='ec2-user', key_filename='ec2_apache.pem')
 
 # Install Apache
-ssh.exec_command('sudo yum update')
-ssh.exec_command('sudo yum install httpd -y')
-ssh.exec_command('sudo systemctl start httpd')
-ssh.exec_command('sudo systemctl enable httpd')
+stdin,stdout,stderr=ssh.exec_command('sudo yum update -y')
+print(stdout.readlines())
 
-# Create an SFTP client
-sftp = ssh.open_sftp()
+stdin,stdout,stderr=ssh.exec_command('sudo yum install httpd -y')
+print(stdout.readlines())
 
-# Now, you can open the file without specifying the full path
-with open('index.html', 'r') as html_file:
-    sftp.putfo(html_file, '/var/www/html/index.html')
+stdin,stdout,stderr=ssh.exec_command('sudo systemctl start httpd')
+print(stdout.readlines())
 
-sftp.close()
+stdin,stdout,stderr=ssh.exec_command('sudo systemctl enable httpd')
+print(stdout.readlines())
+
+stdin,stdout,stderr=ssh.exec_command('sudo chown ec2-user:ec2-user /var/www/html')
+print(stdout.readlines())
+
+
+# Copy index.html to server 
+ftp_client = ssh.open_sftp()
+ftp_client.put("index.html", "index.html")
+ftp_client.close()
+
+stdin,stdout,stderr=ssh.exec_command('mv index.html /var/www/html/')
 
 # Close the SSH connection
 ssh.close()
-
+# test
 print(f'Instance with public IP {public_ip} created and configured.')
 
